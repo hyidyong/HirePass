@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="기술혁신형 중소기업을 위한 외국인 전문인력 채용 사전진단 도구" />
+  <title>HirePass — 외국인 전문인력 채용 사전진단</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231d4ed8'/><text y='.9em' font-size='70' x='15' fill='white' font-family='sans-serif' font-weight='bold'>H</text></svg>" />
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #f8fafc; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+const { useState, useRef } = React;
+
+/* ─ Global CSS ─────────────────────────────────────────────────────────── */
+const css = `
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  select { appearance: none; -webkit-appearance: none; }
+  body { font-family: 'IBM Plex Sans', sans-serif; background: #f8fafc; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+
+  /* Mobile-friendly select */
+  .hp-select { width:100%; padding:11px 34px 11px 12px; border-radius:8px;
+    font-family:'IBM Plex Sans',sans-serif; font-size:0.9rem; background:white;
+    cursor:pointer; outline:none; transition:border-color .15s; }
+  .hp-select:focus { box-shadow:0 0 0 3px rgba(59,130,246,.15); }
+
+  /* Cards */
+  .card { background:white; border-radius:14px; border:1px solid #e2e8f0;
+    box-shadow:0 1px 4px rgba(0,0,0,.05); }
+
+  /* Buttons */
+  .btn-p { background:#1d4ed8; color:white; border:none; border-radius:9px;
+    font-family:'Outfit',sans-serif; font-weight:700; cursor:pointer;
+    transition:all .15s; min-height:46px; }
+  .btn-p:hover:not(:disabled) { background:#1e40af; transform:translateY(-1px);
+    box-shadow:0 4px 14px rgba(29,78,216,.3); }
+  .btn-p:disabled { background:#e2e8f0; color:#94a3b8; cursor:not-allowed; transform:none; box-shadow:none; }
+  .btn-s { background:white; color:#475569; border:1.5px solid #e2e8f0;
+    border-radius:9px; font-family:'IBM Plex Sans',sans-serif; font-weight:500;
+    cursor:pointer; transition:all .15s; min-height:46px; }
+  .btn-s:hover { border-color:#94a3b8; background:#f8fafc; }
+
+  /* Mode toggle */
+  .mode-btn { padding:9px 16px; border-radius:9px; font-family:'IBM Plex Sans',sans-serif;
+    font-size:.85rem; cursor:pointer; transition:all .15s; min-height:42px; }
+  .mode-btn.active { background:#eff6ff; color:#1d4ed8; border:2px solid #1d4ed8; font-weight:600; }
+  .mode-btn.inactive { background:white; color:#64748b; border:2px solid #e2e8f0; font-weight:400; }
+
+  /* Checkbox label */
+  .chk-lbl { display:flex; align-items:center; gap:10px; padding:10px 13px;
+    border-radius:9px; cursor:pointer; transition:all .12s; }
+
+  /* Progress bar */
+  .prog-track { height:7px; background:#f1f5f9; border-radius:99px; overflow:hidden; }
+  .prog-fill { height:100%; border-radius:99px; transition:width .8s ease; }
+
+  /* Risk card */
+  .risk-card { border-radius:11px; padding:13px 15px; }
+
+  /* Support card */
+  .sup-card { background:white; border:1px solid #e2e8f0; border-radius:12px;
+    padding:14px 16px; transition:box-shadow .15s; }
+  .sup-card:hover { box-shadow:0 4px 16px rgba(0,0,0,.08); }
+
+  /* Tip box */
+  .tip-box { background:#fffbeb; border:1px solid #fde68a; border-left:3px solid #d97706;
+    border-radius:8px; padding:10px 13px; font-size:.8rem; color:#92400e; line-height:1.65; }
+  .tip-good { background:#ecfdf5; border-color:#a7f3d0; border-left-color:#059669; color:#065f46; }
+  .tip-blue { background:#eff6ff; border-color:#bfdbfe; border-left-color:#1d4ed8; color:#1e40af; }
+
+  /* Section label */
+  .sec-lbl { font-size:.7rem; font-weight:700; text-transform:uppercase;
+    letter-spacing:.06em; color:#94a3b8; margin-bottom:5px; }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .grid-2 { grid-template-columns: 1fr !important; }
+    .hero-title { font-size:1.6rem !important; }
+    .score-num { font-size:2.6rem !important; }
+    .step-label { display:none; }
+    .hide-mobile { display:none !important; }
+    .show-mobile { display:flex !important; }
+  }
+  @media (min-width: 601px) {
+    .show-mobile { display:none !important; }
+  }
+`;
+
+/* ─ Data ────────────────────────────────────────────────────────────────── */
+const COMPANIES = [
+  { id:"c1", name:"나노소프트 주식회사",     type:"innobiz", typeLabel:"이노비즈",       location:"metro",      locationLabel:"서울 강남",          industry:"AI/SW",       visaExp:"no",      visaExpLabel:"없음",                          language:"kr_en",   languageLabel:"한국어+영어",   securityChecks:[true,true,false,true,false],  tag:"이노비즈 · 서울 · AI솔루션",       desc:"산업용 AI 품질검사 솔루션 개발. 기업부설연구소 보유." },
+  { id:"c2", name:"(주)대경정밀기계",         type:"mainbiz", typeLabel:"메인비즈",       location:"small_city", locationLabel:"대구 달성 국가산단",   industry:"기계/제조",   visaExp:"no",      visaExpLabel:"없음",                          language:"kr",      languageLabel:"한국어 중심",    securityChecks:[true,false,true,false,false], tag:"메인비즈 · 대구 · 정밀부품",       desc:"자동차·반도체 정밀부품 제조. 수출 비중 40%." },
+  { id:"c3", name:"셀바이오텍 주식회사",      type:"lab",     typeLabel:"기업부설연구소",  location:"major_city", locationLabel:"부산 강서 첨단산단",   industry:"바이오",     visaExp:"yes",     visaExpLabel:"있음 (E-7 1건)",               language:"en_ok",   languageLabel:"영어 중심 가능", securityChecks:[true,true,true,true,false],   tag:"연구소 · 부산 · 바이오신소재",     desc:"해양 바이오신소재 R&D. E-7 채용 경험 보유." },
+  { id:"c4", name:"에이아이원 주식회사",      type:"venture", typeLabel:"벤처기업",       location:"metro",      locationLabel:"경기 판교",           industry:"AI/데이터",  visaExp:"yes",     visaExpLabel:"있음 (D-10→E-7 전환)",        language:"multi",   languageLabel:"다국어 가능",   securityChecks:[true,true,true,true,true],    tag:"벤처 · 판교 · 데이터플랫폼",      desc:"B2B 데이터 분석 플랫폼. 외국인 비자 전환 경험 보유." },
+  { id:"c5", name:"한국스마트팜(주)",         type:"innobiz", typeLabel:"이노비즈",       location:"small_city", locationLabel:"전북 익산 농공단지",   industry:"IoT/농업",   visaExp:"no",      visaExpLabel:"없음",                          language:"kr",      languageLabel:"한국어 중심",    securityChecks:[true,false,false,false,false], tag:"이노비즈 · 전북 · 스마트농업",     desc:"IoT 기반 스마트팜 솔루션. 처음 채용 검토 단계." },
+  { id:"c6", name:"디자인시스템즈 주식회사", type:"venture", typeLabel:"벤처기업",       location:"metro",      locationLabel:"서울 홍대",           industry:"디자인",     visaExp:"unknown", visaExpLabel:"잘 모름",                      language:"kr_en",   languageLabel:"한국어+영어",   securityChecks:[true,false,false,true,false], tag:"벤처 · 서울 · UX/브랜딩",        desc:"브랜드·UX 디자인 전문 벤처. 해외 클라이언트 다수." },
+  { id:"c7", name:"(주)충청반도체",           type:"lab",     typeLabel:"기업부설연구소",  location:"major_city", locationLabel:"대전 유성 테크노밸리", industry:"반도체",     visaExp:"yes",     visaExpLabel:"있음 (E-7 복수)",              language:"en_ok",   languageLabel:"영어 중심 가능", securityChecks:[true,true,true,true,true],    tag:"연구소 · 대전 · 반도체공정",      desc:"비메모리 반도체 R&D. 외국인 연구인력 복수 채용 경험." },
+];
+
+/* ── Select options ──────────────────────────────────────────────────────── */
+const O = {
+  visa: [
+    { v:"overseas", l:"해외 거주 (초청 필요)" },
+    { v:"d2",       l:"D-2 유학생" },
+    { v:"d10",      l:"D-10 구직" },
+    { v:"e7",       l:"E-7 전문인력 (기보유)" },
+    { v:"e9",       l:"E-9 비전문취업" },
+    { v:"e74",      l:"E-7-4 숙련기능" },
+    { v:"f2",       l:"F-2 거주" },
+    { v:"f5",       l:"F-5 영주" },
+    { v:"unknown",  l:"잘 모름" },
+  ],
+  edu: [
+    { v:"hs",        l:"고졸 이하" },
+    { v:"associate", l:"전문학사" },
+    { v:"bachelor",  l:"학사" },
+    { v:"master",    l:"석사" },
+    { v:"phd",       l:"박사" },
+  ],
+  major: [
+    { v:"sw",     l:"소프트웨어/컴퓨터공학" },
+    { v:"ai",     l:"AI/데이터" },
+    { v:"mech",   l:"기계/전기/전자" },
+    { v:"bio",    l:"바이오/화학" },
+    { v:"design", l:"디자인/콘텐츠" },
+    { v:"biz",    l:"경영/마케팅" },
+    { v:"trade",  l:"무역/해외영업" },
+    { v:"etc",    l:"기타" },
+  ],
+  exp: [
+    { v:"none", l:"없음" },
+    { v:"lt1",  l:"1년 미만" },
+    { v:"gte1", l:"1년 이상" },
+    { v:"gte2", l:"2년 이상" },
+    { v:"gte5", l:"5년 이상" },
+  ],
+  topik: [
+    { v:"none",   l:"없음 / 미응시" },
+    { v:"1_2",    l:"1~2급 (초급)" },
+    { v:"3_4",    l:"3~4급 (중급)" },
+    { v:"5_6",    l:"5~6급 (고급)" },
+    { v:"native", l:"한국어 원어민 수준" },
+  ],
+  nationality: [
+    { v:"cn",    l:"중국" },
+    { v:"asean", l:"동남아시아 (베트남·필리핀 등)" },
+    { v:"jp_kr", l:"일본·대만" },
+    { v:"cis",   l:"중앙아시아·러시아" },
+    { v:"west",  l:"미국·유럽·호주" },
+    { v:"other", l:"기타" },
+  ],
+  job: [
+    { v:"rd",           l:"R&D/연구개발" },
+    { v:"sw_dev",       l:"소프트웨어 개발" },
+    { v:"ai",           l:"AI/데이터 분석" },
+    { v:"production",   l:"생산기술/공정관리" },
+    { v:"quality",      l:"품질관리" },
+    { v:"sales",        l:"해외영업/기술영업" },
+    { v:"export",       l:"수출/마케팅" },
+    { v:"mgmt",         l:"경영관리" },
+    { v:"simple_admin", l:"단순 사무보조" },
+    { v:"simple_labor", l:"단순 생산노무" },
+  ],
+  ctype: [
+    { v:"venture", l:"벤처기업" },
+    { v:"innobiz", l:"이노비즈" },
+    { v:"mainbiz", l:"메인비즈" },
+    { v:"lab",     l:"기업부설연구소 보유" },
+    { v:"sme",     l:"일반 중소기업" },
+    { v:"unknown", l:"잘 모름" },
+  ],
+  loc: [
+    { v:"metro",      l:"수도권" },
+    { v:"major_city", l:"비수도권 광역시" },
+    { v:"small_city", l:"비수도권 중소도시/산업단지" },
+  ],
+  visaexp: [
+    { v:"yes",     l:"있음" },
+    { v:"no",      l:"없음" },
+    { v:"unknown", l:"잘 모름" },
+  ],
+  lang: [
+    { v:"kr",        l:"한국어 중심" },
+    { v:"kr_en",     l:"한국어+영어 가능" },
+    { v:"en_ok",     l:"영어 중심 가능" },
+    { v:"multi",     l:"다국어 가능" },
+    { v:"not_ready", l:"아직 준비 안 됨" },
+  ],
+};
+
+const SEC_LABELS = [
+  "NDA/비밀유지계약 준비",
+  "핵심기술 접근권한 분리 가능",
+  "자료 반출 통제 가능",
+  "보안교육 가능",
+  "퇴직 시 자료반납 절차 있음",
+];
+
+const TYPE_C = {
+  venture:{ bg:"#eff6ff", c:"#1d4ed8", b:"#bfdbfe" },
+  innobiz:{ bg:"#f0fdf4", c:"#15803d", b:"#bbf7d0" },
+  mainbiz:{ bg:"#fdf4ff", c:"#7e22ce", b:"#e9d5ff" },
+  lab:    { bg:"#fff7ed", c:"#c2410c", b:"#fed7aa" },
+  sme:    { bg:"#f8fafc", c:"#475569", b:"#e2e8f0" },
+  unknown:{ bg:"#f8fafc", c:"#475569", b:"#e2e8f0" },
+};
+
+/* ─ Government Support DB ──────────────────────────────────────────────── */
+function getSupport(co, cand) {
+  const programs = [];
+
+  // 1. K-Work 중기부 고용추천 (D-2 유학생 or SW/AI 직무)
+  if (["d2","d10"].includes(cand.visaStatus) || ["sw_dev","ai","rd"].includes(co.jobRole)) {
+    programs.push({
+      id:"kwork", icon:"🏛️", tag:"중소벤처기업부",
+      title:"K-Work 고용추천서 발급",
+      desc:"중기부 소관 24개 직종에 종사 예정인 외국인 유학생(D-2)·구직자(D-10)에게 E-7-1 고용추천서를 발급합니다. 이노비즈·벤처기업은 우선 추천 대상에 포함됩니다.",
+      link:"https://k-work.or.kr",
+      cond:["이노비즈·벤처·연구소 보유 기업 우대", "SW·AI·제조기술 등 24개 직종 해당 필요", "후보자 전공-직무 일치 요건 확인 필요"],
+      color:"#1d4ed8", bg:"#eff6ff",
+    });
+  }
+
+  // 2. KOITA 중소기업 연구인력 채용지원 (연구소 or R&D 직무)
+  if (["lab","innobiz"].includes(co.companyType) || co.jobRole === "rd") {
+    programs.push({
+      id:"koita", icon:"🔬", tag:"한국산업기술진흥협회",
+      title:"중소기업 연구인력 채용지원 사업",
+      desc:"전문연구인력을 신규 고용하고 3개월 이상 유지 시 인당 연 1,080만 원을 지원합니다. 국내 대학에서 석사 이상 취득한 외국인도 신청 가능합니다.",
+      link:"https://www.koita.or.kr",
+      cond:["기업부설연구소 또는 이노비즈 인증 필요", "석사 이상 외국인 지원 가능 (국내 대학 취득 시)", "타 인건비 지원 사업과 중복 수혜 불가"],
+      color:"#059669", bg:"#ecfdf5",
+    });
+  }
+
+  // 3. KOTRA 외국인 유학생 채용박람회 (D-2 or 해외거주)
+  if (["d2","overseas","d10"].includes(cand.visaStatus)) {
+    programs.push({
+      id:"kotra", icon:"🌐", tag:"KOTRA",
+      title:"글로벌 탤런트 페어 (외국인유학생 채용관)",
+      desc:"KOTRA가 주관하는 국내 최대 글로벌 인재 채용박람회로, 외국인 유학생·구직자와 국내 기업을 연결합니다. 기업 부스 참가 및 사전 매칭 면접이 가능합니다.",
+      link:"https://jffds.kotra.biz",
+      cond:["연 1~2회 개최 (서울 aT센터 등)", "참가 기업 사전 등록 필요", "D-2·D-10 후보자 연결에 효과적"],
+      color:"#ea580c", bg:"#fff7ed",
+    });
+  }
+
+  // 4. E-7 임금요건 특례 (비수도권 or 이노비즈/벤처)
+  if (co.location !== "metro" || ["innobiz","venture","mainbiz"].includes(co.companyType)) {
+    programs.push({
+      id:"wage", icon:"💰", tag:"법무부",
+      title:"E-7 임금요건 중소·벤처기업 특례",
+      desc:"2026년 기준 E-7 전문인력 임금요건은 연 3,112만 원 이상이나, 중소·벤처·비수도권 중견기업은 전년도 GNI 70% 이상(약 2,350만 원)으로 완화 적용됩니다.",
+      link:"https://visalovekorea.com/E-7",
+      cond:["중소기업·벤처기업·비수도권 중견기업에 한정", "고용계약서에 월 급여 및 근로시간 명시 필수", "준전문·일반기능인력: 연 2,589만 원 이상"],
+      color:"#7e22ce", bg:"#fdf4ff",
+    });
+  }
+
+  // 5. 한국산업인력공단 고용행정 대행 (비자 경험 없는 기업)
+  if (co.visaExp !== "yes") {
+    programs.push({
+      id:"hrdk", icon:"📋", tag:"한국산업인력공단",
+      title:"외국인 고용허가제 행정 대행 서비스",
+      desc:"비자 행정 경험이 없는 기업을 위해 고용허가서 발급·사증발급인정서·입국지원 등을 대행합니다. 업종별 대행기관(중소기업중앙회 등)을 통해 신청 가능합니다.",
+      link:"https://www.hrdkorea.or.kr",
+      cond:["E-9(비전문) 도입 기업 대상 공단 대행 가능", "E-7 전문인력은 법무사·노무사 병행 권장", "처음 채용하는 기업에 특히 유용"],
+      color:"#0369a1", bg:"#f0f9ff",
+    });
+  }
+
+  return programs.slice(0, 4); // max 4 cards
+}
+
+/* ─ Score Logic ─────────────────────────────────────────────────────────── */
+function calcScore(co, ca) {
+  // 1. Edu+Exp (20)
+  let ed = 0;
+  if (ca.education==="phd") ed=19;
+  else if (ca.education==="master") ed=17;
+  else if (ca.education==="bachelor") ed={none:7,lt1:9,gte1:12,gte2:15,gte5:18}[ca.experience]??7;
+  else if (ca.education==="associate") ed={none:4,lt1:5,gte1:6,gte2:8,gte5:10}[ca.experience]??4;
+  else ed=3;
+  if (["simple_admin","simple_labor"].includes(co.jobRole)) ed=Math.min(ed,5);
+
+  // TOPIK bonus (max +2)
+  const topikBonus = {none:0,"1_2":0,"3_4":1,"5_6":2,"native":2}[ca.topik]??0;
+  const eduExp = Math.min(ed + topikBonus, 20);
+
+  // 2. Major/Job (20)
+  const high={sw:["sw_dev","ai","rd"],ai:["ai","rd","sw_dev"],mech:["production","quality","rd"],bio:["rd","quality"],design:["export","mgmt"],biz:["mgmt","export","sales"],trade:["sales","export"]};
+  let mj=["simple_admin","simple_labor"].includes(co.jobRole)?4:high[ca.major]?.includes(co.jobRole)?19:9;
+  const majorJob=Math.min(mj,20);
+
+  // 3. Visa (20)
+  const vs={f5:19,f2:18,e7:17,d10:13,d2:11,overseas:9,e74:7,e9:6,unknown:4};
+  const visa=Math.min(vs[ca.visaStatus]??4,20);
+
+  // 4. Admin (15)
+  const innov=["venture","innobiz","mainbiz","lab"].includes(co.companyType);
+  let adm=6;
+  if(innov&&co.visaExp==="yes") adm=14;
+  else if(innov&&co.visaExp==="no") adm=9;
+  else if(innov) adm=8;
+  else if(co.companyType==="sme"&&co.visaExp==="yes") adm=9;
+  else if(co.companyType==="sme") adm=5;
+  if(co.location==="metro") adm=Math.min(adm+1,15);
+  const admin=Math.min(adm,15);
+
+  // 5. Comm (10)
+  const cm={multi:10,en_ok:9,kr_en:7,kr:5,not_ready:2};
+  const comm=Math.min(cm[co.language]??2,10);
+
+  // 6. Security (15)
+  const n=co.securityChecks.filter(Boolean).length;
+  const security=[0,3,6,9,12,15][n];
+
+  return { score:eduExp+majorJob+visa+admin+comm+security, bd:{eduExp,majorJob,visa,admin,comm,security} };
+}
+
+function rlv(v,m){ const p=v/m; return p>=.75?"low":p>=.45?"mid":"high"; }
+const RL_L={"low":"낮음","mid":"중간","high":"높음"};
+const RL_C={
+  low: {bg:"#ecfdf5",c:"#059669",b:"#a7f3d0"},
+  mid: {bg:"#fffbeb",c:"#d97706",b:"#fde68a"},
+  high:{bg:"#fef2f2",c:"#dc2626",b:"#fca5a5"},
+};
+function grade(s){
+  if(s>=80) return {label:"채용 검토 가능성 높음",  c:"#059669",bg:"#ecfdf5",badge:"A"};
+  if(s>=60) return {label:"추가 확인 필요",          c:"#d97706",bg:"#fffbeb",badge:"B"};
+  if(s>=40) return {label:"주의 요소 다수",          c:"#ea580c",bg:"#fff7ed",badge:"C"};
+  return           {label:"전문인력 채용 적합성 낮음",c:"#dc2626",bg:"#fef2f2",badge:"D"};
+}
+
+/* ─ Improvement Tips ────────────────────────────────────────────────────── */
+const TIPS = {
+  eduExp: {
+    low:  "후보자 학력·경력이 부족합니다. 석사 이상이거나 학사+2년 이상 경력인 후보자를 우선 검토하세요. TOPIK 3급 이상 보유 시 소명 자료로 활용 가능합니다.",
+    mid:  "경력 기간이 짧거나 학력 조건이 아슬합니다. 해당 직무 관련 프로젝트·논문·포트폴리오 등 보완 서류를 요청하세요.",
+    low_ok:"학력·경력 요건이 충분합니다. 학위증명서·경력증명서를 사전 확보해두세요.",
+  },
+  majorJob: {
+    low:  "전공과 직무 연관성이 낮습니다. 고용사유서에서 직무 연관성을 구체적으로 소명하거나, 직무 명칭을 E-7 91개 직종 코드에 맞게 재정의하는 것이 중요합니다.",
+    mid:  "전공-직무 연관성 소명이 필요합니다. 직무기술서에 전문기술 적용 내용을 구체적으로 기술하세요.",
+    low_ok:"전공·직무 연관성이 높습니다. 직무기술서를 E-7 직종코드 기준으로 정확히 작성하면 심사에 유리합니다.",
+  },
+  visa: {
+    low:  "현 체류자격으로는 전문인력 취업이 어렵습니다. D-10(구직) 전환 또는 E-7 신규 초청 절차가 필요하며, 법무사 상담을 먼저 받으세요.",
+    mid:  "체류자격 변경 또는 확인 절차가 필요합니다. 근무처 변경허가 또는 체류자격 변경 가능 여부를 출입국관서에서 확인하세요.",
+    low_ok:"체류자격이 안정적입니다. 체류기간 만료일과 갱신 일정을 미리 확인해두세요.",
+  },
+  admin: {
+    low:  "기업 행정 준비가 부족합니다. 이노비즈·벤처 등 혁신형 인증 취득을 검토하고, 노무사 또는 법무사를 통한 E-7 행정 대행을 권장합니다.",
+    mid:  "비자 지원 경험이 없다면 K-Work 플랫폼 또는 한국산업인력공단 행정 대행 서비스를 활용하세요. 고용사유서 작성이 핵심입니다.",
+    low_ok:"행정 준비도가 높습니다. 고용허가서·납세증명서·고용계약서 등을 미리 세트로 준비해두세요.",
+  },
+  comm: {
+    low:  "언어 소통 준비가 되지 않았습니다. 채용 전 업무 언어 정책(한국어/영어 병용 등)을 결정하고 온보딩 담당자를 지정하세요.",
+    mid:  "소통 방식을 사전에 합의하고, 주요 업무 문서 이중언어화를 검토하세요.",
+    low_ok:"소통 환경이 잘 갖춰져 있습니다. 입사 초기 정기 1:1 체크인을 운영하면 적응에 도움이 됩니다.",
+  },
+  security: {
+    low:  "기술보호 체계가 없습니다. NDA 체결, 핵심기술 접근권한 분리, 자료 반출 통제 3가지를 최우선으로 마련하세요. 미비 시 기술유출 시 법적 대응이 어렵습니다.",
+    mid:  "일부 항목이 미비합니다. 빠진 항목을 채용 전에 보완하고, 입사 시 보안 서약서도 병행 체결하세요.",
+    low_ok:"기술보호 체계가 잘 갖춰져 있습니다. 정기 보안 교육과 갱신 서약 절차를 유지하세요.",
+  },
+};
+
+function getTip(key, val, max) {
+  const p=val/max;
+  if(p>=.75) return { text:TIPS[key].low_ok, cls:"tip-good" };
+  if(p>=.45) return { text:TIPS[key].mid,   cls:"tip-box" };
+  return             { text:TIPS[key].low,   cls:"tip-box" };
+}
+
+/* ─ UI Helpers ───────────────────────────────────────────────────────────── */
+function Sel({ label, value, opts, onChange }) {
+  return (
+    <div style={{ marginBottom:13 }}>
+      <div className="sec-lbl">{label}</div>
+      <div style={{ position:"relative" }}>
+        <select className="hp-select" value={value} onChange={e=>onChange(e.target.value)}
+          style={{ border:`1.5px solid ${value?"#1d4ed8":"#e2e8f0"}`, color:value?"#1e293b":"#94a3b8" }}>
+          <option value="" disabled>선택하세요</option>
+          {opts.map(o=><option key={o.v} value={o.v}>{o.l}</option>)}
+        </select>
+        <span style={{ position:"absolute",right:11,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",color:"#94a3b8",fontSize:10 }}>▼</span>
+      </div>
+    </div>
+  );
+}
+
+function Badge({ l, bg, c, b }) {
+  return <span style={{ background:bg,color:c,border:`1px solid ${b}`,fontSize:"0.7rem",fontWeight:700,padding:"2px 9px",borderRadius:99,whiteSpace:"nowrap" }}>{l}</span>;
+}
+
+function StepBar({ cur }) {
+  const steps=["기업 정보","후보자 정보","진단 결과"];
+  return (
+    <div style={{ display:"flex",alignItems:"center",maxWidth:440,margin:"0 auto" }}>
+      {steps.map((s,i)=>{
+        const done=i<cur,act=i===cur;
+        return (
+          <div key={s} style={{ display:"flex",alignItems:"center",flex:1 }}>
+            <div style={{ display:"flex",flexDirection:"column",alignItems:"center",flex:1 }}>
+              <div style={{ width:32,height:32,borderRadius:"50%",background:done?"#059669":act?"#1d4ed8":"#e2e8f0",color:done||act?"white":"#94a3b8",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"0.8rem",fontFamily:"'Outfit',sans-serif",fontWeight:700,transition:"all .3s",flexShrink:0 }}>
+                {done?"✓":i+1}
+              </div>
+              <div className="step-label" style={{ fontSize:"0.65rem",marginTop:4,color:act?"#1d4ed8":done?"#059669":"#94a3b8",fontWeight:act||done?600:400 }}>{s}</div>
+            </div>
+            {i<2 && <div style={{ flex:1,height:2,background:i<cur?"#059669":"#e2e8f0",margin:"0 3px",marginBottom:18,transition:"background .3s" }}/>}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* ─ Step 1: Company ─────────────────────────────────────────────────────── */
+function Step1({ onNext }) {
+  const [mode,setMode]=useState("search");
+  const [q,setQ]=useState("");
+  const [sel,setSel]=useState(null);
+  const [dd,setDd]=useState(false);
+  const [jobRole,setJobRole]=useState("");
+  const [manual,setManual]=useState({ name:"",companyType:"",location:"",visaExp:"",language:"",jobRole:"",securityChecks:[false,false,false,false,false] });
+  const filtered=COMPANIES.filter(c=>c.name.includes(q)||c.tag.includes(q)||c.desc.includes(q));
+
+  const pick=(c)=>{ setSel(c); setQ(c.name); setDd(false); };
+  const updM=(k,v)=>setManual(p=>({...p,[k]:v}));
+  const updSec=(i,v)=>setManual(p=>{ const a=[...p.securityChecks];a[i]=v;return{...p,securityChecks:a}; });
+
+  const sOk=mode==="search"&&sel&&jobRole;
+  const mOk=mode==="manual"&&manual.name&&manual.companyType&&manual.location&&manual.visaExp&&manual.language&&manual.jobRole;
+
+  const doNext=()=>{ if(sOk) onNext({...sel,jobRole}); else if(mOk) onNext({...manual,name:manual.name}); };
+
+  return (
+    <div>
+      <h2 style={{ fontFamily:"'Outfit',sans-serif",fontWeight:700,color:"#0f2744",fontSize:"1.2rem",marginBottom:4 }}>Step 1 · 기업 정보</h2>
+      <p style={{ color:"#64748b",fontSize:"0.83rem",marginBottom:18 }}>기업을 검색하거나 직접 입력하세요.</p>
+
+      <div style={{ display:"flex",gap:8,marginBottom:18,flexWrap:"wrap" }}>
+        <button className={`mode-btn ${mode==="search"?"active":"inactive"}`} onClick={()=>setMode("search")}>🔍 기업 검색 (샘플 DB)</button>
+        <button className={`mode-btn ${mode==="manual"?"active":"inactive"}`} onClick={()=>setMode("manual")}>✏️ 직접 입력</button>
+      </div>
+
+      {mode==="search" ? (
+        <>
+          <div style={{ position:"relative",marginBottom:16 }}>
+            <span style={{ position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",color:"#94a3b8",fontSize:14 }}>🔍</span>
+            <input type="search" value={q} onChange={e=>{setQ(e.target.value);setDd(true);setSel(null);}} onFocus={()=>setDd(true)}
+              placeholder="기업명, 업종, 지역으로 검색…"
+              style={{ width:"100%",padding:"12px 12px 12px 38px",border:"1.5px solid #e2e8f0",borderRadius:9,fontSize:"0.9rem",outline:"none",fontFamily:"'IBM Plex Sans',sans-serif",minHeight:46 }} />
+            {dd&&q&&(
+              <div style={{ position:"absolute",top:"calc(100% + 4px)",left:0,right:0,background:"white",border:"1px solid #e2e8f0",borderRadius:11,boxShadow:"0 8px 28px rgba(0,0,0,.13)",zIndex:60,maxHeight:300,overflowY:"auto" }}>
+                {filtered.length===0 ? <div style={{ padding:16,textAlign:"center",color:"#94a3b8",fontSize:"0.83rem" }}>검색 결과 없음</div>
+                  : filtered.map(c=>(
+                    <div key={c.id} onClick={()=>pick(c)} style={{ padding:"12px 14px",cursor:"pointer",borderBottom:"1px solid #f8fafc",display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8 }}
+                      onMouseEnter={e=>e.currentTarget.style.background="#f8fafc"}
+                      onMouseLeave={e=>e.currentTarget.style.background="white"}>
+                      <div style={{ flex:1,minWidth:0 }}>
+                        <div style={{ fontFamily:"'Outfit',sans-serif",fontWeight:600,fontSize:"0.88rem",color:"#1e293b",marginBottom:2 }}>{c.name}</div>
+                        <div style={{ fontSize:"0.73rem",color:"#64748b" }}>{c.desc}</div>
+                      </div>
+                      <Badge l={c.typeLabel} {...TYPE_C[c.type]} />
+                    </div>
+                  ))}
+                <div style={{ padding:"9px 14px",borderTop:"1px solid #f1f5f9",background:"#f8fafc",fontSize:"0.72rem",color:"#94a3b8" }}>
+                  💡 프로토타입 샘플 데이터 — 실제 서비스에서는 기업 DB 연동
+                </div>
+              </div>
+            )}
+          </div>
+
+          {!sel ? (
+            <div style={{ background:"white",border:"1px dashed #e2e8f0",borderRadius:12,padding:"24px",textAlign:"center",marginBottom:16 }}>
+              <div style={{ fontSize:"2rem",marginBottom:8 }}>🏢</div>
+              <div style={{ color:"#94a3b8",fontSize:"0.83rem",marginBottom:12 }}>위에서 기업명을 검색해 선택하세요</div>
+              <div style={{ display:"flex",gap:7,flexWrap:"wrap",justifyContent:"center" }}>
+                {COMPANIES.slice(0,4).map(c=>(
+                  <button key={c.id} onClick={()=>pick(c)} style={{ background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:99,padding:"5px 12px",fontSize:"0.75rem",color:"#475569",cursor:"pointer" }}>{c.name}</button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div style={{ background:"#f0f9ff",border:"2px solid #1d4ed8",borderRadius:12,padding:"15px 16px",marginBottom:14 }}>
+              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:10,flexWrap:"wrap",gap:8 }}>
+                <div>
+                  <div style={{ fontFamily:"'Outfit',sans-serif",fontWeight:700,fontSize:"0.95rem",color:"#0f2744" }}>{sel.name}</div>
+                  <div style={{ fontSize:"0.75rem",color:"#475569",marginTop:2 }}>{sel.desc}</div>
+                </div>
+                <Badge l={sel.typeLabel} {...TYPE_C[sel.type]} />
+              </div>
+              <div style={{ display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:7 }}>
+                {[["📍",sel.locationLabel],["🌐",sel.languageLabel],["📋",sel.visaExpLabel],["🔐",`${sel.securityChecks.filter(Boolean).length}/5개 보안 준비`]].map(([ic,tx])=>(
+                  <div key={tx} style={{ background:"white",borderRadius:7,padding:"7px 10px",border:"1px solid #bfdbfe" }}>
+                    <span style={{ fontSize:"0.75rem",color:"#1e293b" }}>{ic} {tx}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {sel && <Sel label="채용 예정 직무" value={jobRole} opts={O.job} onChange={setJobRole} />}
+        </>
+      ) : (
+        <div className="grid-2" style={{ display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:14 }}>
+          <div className="card" style={{ padding:16 }}>
+            <div className="sec-lbl" style={{ marginBottom:12 }}>기업 기본 정보</div>
+            <div style={{ marginBottom:13 }}>
+              <div className="sec-lbl">기업명</div>
+              <input type="text" value={manual.name} onChange={e=>updM("name",e.target.value)} placeholder="기업명 입력"
+                style={{ width:"100%",padding:"11px 12px",border:`1.5px solid ${manual.name?"#1d4ed8":"#e2e8f0"}`,borderRadius:8,fontSize:"0.875rem",outline:"none",fontFamily:"'IBM Plex Sans',sans-serif",minHeight:44 }} />
+            </div>
+            <Sel label="기업 유형" value={manual.companyType} opts={O.ctype} onChange={v=>updM("companyType",v)} />
+            <Sel label="기업 소재지" value={manual.location} opts={O.loc} onChange={v=>updM("location",v)} />
+            <Sel label="비자 지원 경험" value={manual.visaExp} opts={O.visaexp} onChange={v=>updM("visaExp",v)} />
+            <Sel label="업무 소통 언어" value={manual.language} opts={O.lang} onChange={v=>updM("language",v)} />
+            <Sel label="채용 예정 직무" value={manual.jobRole} opts={O.job} onChange={v=>updM("jobRole",v)} />
+          </div>
+          <div className="card" style={{ padding:16 }}>
+            <div className="sec-lbl" style={{ marginBottom:12 }}>🔐 기술보호 준비도</div>
+            {SEC_LABELS.map((lbl,i)=>(
+              <label key={i} className="chk-lbl" style={{ border:`1.5px solid ${manual.securityChecks[i]?"#bfdbfe":"#f1f5f9"}`,background:manual.securityChecks[i]?"#eff6ff":"white",marginBottom:6 }}>
+                <input type="checkbox" checked={manual.securityChecks[i]} onChange={e=>updSec(i,e.target.checked)} style={{ width:16,height:16,accentColor:"#1d4ed8",flexShrink:0,cursor:"pointer" }} />
+                <span style={{ fontSize:"0.82rem",color:manual.securityChecks[i]?"#1e40af":"#475569",fontWeight:manual.securityChecks[i]?500:400 }}>{lbl}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <button className="btn-p" onClick={doNext} disabled={!(sOk||mOk)} style={{ marginTop:18,padding:"0 28px",fontSize:"0.95rem",width:"100%" }}>
+        다음: 후보자 정보 입력 →
+      </button>
+    </div>
+  );
+}
+
+/* ─ Step 2: Candidate ────────────────────────────────────────────────────── */
+function Step2({ company, onNext, onBack }) {
+  const [mode,setMode]=useState("link");
+  const [linkGen,setLinkGen]=useState(false);
+  const [linkCopied,setLinkCopied]=useState(false);
+  const [preview,setPreview]=useState(false);
+  const [cand,setCand]=useState({ visaStatus:"",education:"",major:"",experience:"",topik:"",nationality:"" });
+  const upd=(k,v)=>setCand(p=>({...p,[k]:v}));
+  const ready=cand.visaStatus&&cand.education&&cand.major&&cand.experience&&cand.topik&&cand.nationality;
+  const fakeUrl=`hirepass.kr/c/${Math.random().toString(36).slice(2,8)}`;
+
+  const copyLink=()=>{ navigator.clipboard.writeText("https://"+fakeUrl).then(()=>{ setLinkCopied(true);setTimeout(()=>setLinkCopied(false),2000); }); };
+
+  const CandForm = ({ inModal }) => (
+    <div style={{ padding:inModal?"0":"16px",background:inModal?"transparent":"white",borderRadius:inModal?0:11,border:inModal?"none":"1px solid #e2e8f0" }}>
+      {!inModal && <div style={{ background:"#fffbeb",border:"1px solid #fde68a",borderRadius:7,padding:"9px 12px",fontSize:"0.78rem",color:"#92400e",marginBottom:14,lineHeight:1.6 }}>
+        💼 면접·이력서 기반으로 HR 담당자가 직접 입력하는 방식입니다.
+      </div>}
+      <Sel label="현재 체류 상태" value={cand.visaStatus} opts={O.visa} onChange={v=>upd("visaStatus",v)} />
+      <Sel label="국적/출신 지역" value={cand.nationality} opts={O.nationality} onChange={v=>upd("nationality",v)} />
+      <Sel label="최종학력" value={cand.education} opts={O.edu} onChange={v=>upd("education",v)} />
+      <Sel label="전공/전문분야" value={cand.major} opts={O.major} onChange={v=>upd("major",v)} />
+      <Sel label="관련 경력" value={cand.experience} opts={O.exp} onChange={v=>upd("experience",v)} />
+      <Sel label="한국어 능력 (TOPIK 등)" value={cand.topik} opts={O.topik} onChange={v=>upd("topik",v)} />
+    </div>
+  );
+
+  return (
+    <div>
+      <h2 style={{ fontFamily:"'Outfit',sans-serif",fontWeight:700,color:"#0f2744",fontSize:"1.2rem",marginBottom:4 }}>Step 2 · 후보자 정보</h2>
+      <p style={{ color:"#64748b",fontSize:"0.83rem",marginBottom:14 }}>링크로 후보자에게 직접 요청하거나, 면접 후 HR이 입력할 수 있습니다.</p>
+
+      {/* Company pill */}
+      <div style={{ background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:8,padding:"9px 13px",marginBottom:16,display:"flex",alignItems:"center",gap:8,flexWrap:"wrap" }}>
+        <span style={{ fontSize:"0.7rem",color:"#94a3b8",fontWeight:600 }}>선택된 기업</span>
+        <span style={{ fontFamily:"'Outfit',sans-serif",fontWeight:600,color:"#1e293b",fontSize:"0.88rem" }}>{company?.name}</span>
+        <Badge l={company?.typeLabel||"기업"} {...TYPE_C[company?.type||"sme"]} />
+        <span style={{ fontSize:"0.73rem",color:"#64748b" }}>· {O.job.find(j=>j.v===company?.jobRole)?.l||"-"}</span>
+      </div>
+
+      <div style={{ display:"flex",gap:8,marginBottom:18,flexWrap:"wrap" }}>
+        <button className={`mode-btn ${mode==="link"?"active":"inactive"}`} onClick={()=>setMode("link")}>📨 링크 전송</button>
+        <button className={`mode-btn ${mode==="direct"?"active":"inactive"}`} onClick={()=>setMode("direct")}>✏️ 직접 입력</button>
+      </div>
+
+      {mode==="link" ? (
+        <div>
+          <div className="card" style={{ padding:18,marginBottom:14 }}>
+            <p style={{ fontSize:"0.85rem",color:"#475569",lineHeight:1.75,marginBottom:16 }}>
+              후보자에게 아래 링크를 전송하면, 후보자가 직접 자신의 체류자격·학력·전공·경력·한국어 능력 정보를 입력합니다.<br/>
+              <span style={{ fontSize:"0.76rem",color:"#94a3b8" }}>입력된 정보는 기업 정보와 결합되어 진단 결과가 생성됩니다. (실제 서비스 기준)</span>
+            </p>
+            <div style={{ background:"#f8fafc",border:"1px solid #e2e8f0",borderRadius:8,padding:"11px 13px",display:"flex",alignItems:"center",gap:10,marginBottom:13,flexWrap:"wrap" }}>
+              <span style={{ fontSize:"0.72rem",color:"#94a3b8",flexShrink:0 }}>🔗</span>
+              <span style={{ fontFamily:"'IBM Plex Sans',sans-serif",fontSize:"0.8rem",color:linkGen?"#1d4ed8":"#94a3b8",fontWeight:linkGen?500:400,flex:1,wordBreak:"break-all" }}>
+                {linkGen?`https://${fakeUrl}`:"링크 생성 버튼을 눌러주세요"}
+              </span>
+              {linkGen&&<button onClick={copyLink} style={{ background:linkCopied?"#059669":"#eff6ff",color:linkCopied?"white":"#1d4ed8",border:`1px solid ${linkCopied?"#059669":"#bfdbfe"}`,padding:"6px 12px",borderRadius:7,fontSize:"0.75rem",cursor:"pointer",whiteSpace:"nowrap",minHeight:36 }}>
+                {linkCopied?"✓ 복사됨":"복사"}
+              </button>}
+            </div>
+            <div style={{ display:"flex",gap:8,flexWrap:"wrap" }}>
+              <button className="btn-p" onClick={()=>setLinkGen(true)} style={{ padding:"0 18px",fontSize:"0.85rem",minHeight:42 }}>🔗 링크 생성</button>
+              {linkGen&&<button className="btn-s" onClick={()=>setPreview(true)} style={{ padding:"0 16px",fontSize:"0.83rem",minHeight:42 }}>👁 후보자 화면 미리보기</button>}
+            </div>
+          </div>
+
+          {/* Preview modal */}
+          {preview&&(
+            <div style={{ position:"fixed",inset:0,background:"rgba(0,0,0,.5)",zIndex:200,display:"flex",alignItems:"center",justifyContent:"center",padding:16,overflowY:"auto" }}>
+              <div style={{ background:"white",borderRadius:16,maxWidth:460,width:"100%",maxHeight:"90vh",overflowY:"auto",padding:"22px" }}>
+                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16 }}>
+                  <div>
+                    <div style={{ fontFamily:"'Outfit',sans-serif",fontWeight:700,fontSize:"1rem",color:"#0f2744" }}>후보자 정보 입력</div>
+                    <div style={{ fontSize:"0.72rem",color:"#94a3b8",marginTop:2 }}>요청 기업: {company?.name}</div>
+                  </div>
+                  <button onClick={()=>setPreview(false)} style={{ background:"#f1f5f9",border:"none",borderRadius:7,padding:"6px 11px",cursor:"pointer",fontSize:"0.8rem",color:"#475569",minHeight:36 }}>✕</button>
+                </div>
+                <div className="tip-blue" style={{ marginBottom:14 }}>
+                  📋 <strong>{company?.name}</strong>에서 외국인 전문인력 채용을 위해 귀하의 정보를 요청합니다. 입력하신 정보는 채용 사전진단에만 활용됩니다.
+                </div>
+                <CandForm inModal />
+                <div className="tip-box" style={{ marginTop:10 }}>
+                  ⚠ 입력 정보는 채용 사전진단 도구에만 사용되며, 비자 발급을 보장하지 않습니다.
+                </div>
+                <button className="btn-p" onClick={()=>setPreview(false)} disabled={!ready} style={{ marginTop:14,width:"100%",padding:"0 20px",fontSize:"0.9rem" }}>
+                  {ready?"정보 제출 (진단 시작)":"모든 항목을 선택해주세요"}
+                </button>
+              </div>
+            </div>
+          )}
+
+          {ready&&!preview&&(
+            <div className="tip-good" style={{ display:"flex",alignItems:"center",gap:10 }}>
+              <span style={{ fontSize:"1.2rem" }}>✅</span>
+              <div>
+                <div style={{ fontFamily:"'Outfit',sans-serif",fontWeight:600,fontSize:"0.88rem" }}>후보자 정보 수신 완료</div>
+                <div style={{ fontSize:"0.73rem",marginTop:1,color:"#059669" }}>
+                  {O.edu.find(o=>o.v===cand.education)?.l} · {O.major.find(o=>o.v===cand.major)?.l} · {O.topik.find(o=>o.v===cand.topik)?.l}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div style={{ marginTop:13,padding:"10px 13px",background:"#f8fafc",border:"1px dashed #cbd5e1",borderRadius:8,fontSize:"0.72rem",color:"#94a3b8",lineHeight:1.65 }}>
+            💡 <strong>실제 서비스:</strong> 후보자 제출 → 서버 결합 → 진단 결과 생성. 이 프로토타입에서는 '미리보기'로 플로우를 시뮬레이션합니다.
+          </div>
+        </div>
+      ) : (
+        <CandForm inModal={false} />
+      )}
+
+      <div style={{ display:"flex",gap:10,marginTop:18,flexWrap:"wrap" }}>
+        <button className="btn-s" onClick={onBack} style={{ padding:"0 20px",fontSize:"0.88rem",flex:"0 0 auto" }}>← 이전</button>
+        <button className="btn-p" onClick={()=>onNext(cand)} disabled={!ready} style={{ flex:1,padding:"0 20px",fontSize:"0.9rem" }}>
+          진단 결과 보기 →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─ Step 3: Results ──────────────────────────────────────────────────────── */
+function Step3({ company, candidate, onBack }) {
+  const { score, bd } = calcScore(company, candidate);
+  const g = grade(score);
+  const [copied,setCopied]=useState(false);
+  const [showTips,setShowTips]=useState(false);
+  const [showSupport,setShowSupport]=useState(false);
+  const supports = getSupport(company, candidate);
+
+  const bdDef=[
+    {label:"학력·경력 요건",key:"eduExp",max:20},
+    {label:"전공·직무 연관성",key:"majorJob",max:20},
+    {label:"체류자격 안정성",key:"visa",max:20},
+    {label:"기업 행정 준비도",key:"admin",max:15},
+    {label:"조직 소통 준비도",key:"comm",max:10},
+    {label:"기술보호 준비도",key:"security",max:15},
+  ];
+  const risks=[
+    {title:"비자 리스크",rl:rlv(bd.visa,20),ds:{low:"체류자격이 안정적이며 직무 연관성이 높습니다.",mid:"체류자격과 직무 연관성 확인이 필요합니다.",high:"체류자격 전환 또는 신규 신청이 필요합니다."}},
+    {title:"직무적합성",rl:rlv(bd.majorJob,20),ds:{low:"전공-직무 연관성이 높습니다.",mid:"전공·직무 연관성 소명 서류가 필요합니다.",high:"직무 재정의 또는 전문가 확인이 필요합니다."}},
+    {title:"행정 리스크",rl:rlv(bd.admin,15),ds:{low:"기업 인증 및 비자 경험이 충분합니다.",mid:"비자 행정 경험 부족 또는 인증 요건 확인 필요.",high:"전문가(노무사·법무사) 지원이 필요합니다."}},
+    {title:"조직적응 리스크",rl:rlv(bd.comm,10),ds:{low:"소통 환경이 양호합니다.",mid:"언어 소통 방식 사전 합의가 필요합니다.",high:"언어 소통 준비가 미흡합니다."}},
+    {title:"기술보호 리스크",rl:rlv(bd.security,15),ds:{low:"기술보호 체계가 잘 갖춰져 있습니다.",mid:"일부 기술보호 조치 보완이 필요합니다.",high:"NDA·접근권한 분리 등 즉각 조치가 필요합니다."}},
+  ];
+  const sorted=[...bdDef].sort((a,b)=>bd[b.key]/b.max-bd[a.key]/a.max);
+  const strengths=sorted.slice(0,3).map(d=>`${d.label}: ${bd[d.key]}/${d.max}점`);
+  const warnings=sorted.slice(-3).reverse().map(d=>`${d.label}: ${bd[d.key]}/${d.max}점`);
+  const secN=company.securityChecks?.filter(Boolean).length??0;
+
+  const copy=()=>{
+    const t=`[HirePass 사전진단]\n기업: ${company.name}\n직무: ${O.job.find(j=>j.v===company.jobRole)?.l}\n종합: ${score}/100 (${g.label})\n\n${bdDef.map(d=>`${d.label}: ${bd[d.key]}/${d.max}`).join("\n")}\n\n※ 사전 점검 결과이며 비자 발급을 보장하지 않습니다.`;
+    navigator.clipboard.writeText(t).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2200);});
+  };
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:18,gap:10,flexWrap:"wrap" }}>
+        <div>
+          <h2 style={{ fontFamily:"'Outfit',sans-serif",fontWeight:700,color:"#0f2744",fontSize:"1.2rem",marginBottom:3 }}>Step 3 · 사전진단 결과</h2>
+          <p style={{ color:"#64748b",fontSize:"0.78rem" }}>{company.name} · {O.job.find(j=>j.v===company.jobRole)?.l}</p>
+        </div>
+        <button onClick={copy} style={{ background:copied?"#059669":"white",color:copied?"white":"#475569",border:`1px solid ${copied?"#059669":"#e2e8f0"}`,padding:"8px 14px",borderRadius:8,fontSize:"0.78rem",cursor:"pointer",minHeight:38,whiteSpace:"nowrap" }}>
+          {copied?"✓ 복사됨":"📋 결과 복사"}
+        </button>
+      </div>
+
+      {/* Score card */}
+      <div className="card" style={{ padding:"20px",marginBottom:14 }}>
+        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:14,marginBottom:18 }}>
+          <div style={{ background:g.bg,border:`1px solid ${g.c}44`,borderRadius:10,padding:"12px 15px",display:"flex",alignItems:"center",gap:11,flex:1,minWidth:200 }}>
+            <div style={{ width:38,height:38,background:g.c,borderRadius:9,display:"flex",alignItems:"center",justifyContent:"center",fontFamily:"'Outfit',sans-serif",fontWeight:800,color:"white",fontSize:"1rem",flexShrink:0 }}>{g.badge}</div>
+            <div>
+              <div style={{ fontFamily:"'Outfit',sans-serif",fontWeight:700,color:g.c,fontSize:"0.93rem" }}>{g.label}</div>
+              <div style={{ fontSize:"0.7rem",color:"#64748b",marginTop:2 }}>사전 점검 결과 · 법적 판단 아님</div>
+            </div>
+          </div>
+          <div style={{ textAlign:"center" }}>
+            <div className="score-num" style={{ fontFamily:"'Outfit',sans-serif",fontSize:"3rem",fontWeight:800,color:g.c,lineHeight:1 }}>{score}</div>
+            <div style={{ fontSize:"0.75rem",color:"#94a3b8" }}>/ 100점</div>
+          </div>
+        </div>
+
+        {bdDef.map(d=>{
+          const v=bd[d.key],pct=(v/d.max)*100;
+          const bc=pct>=75?"#059669":pct>=45?"#d97706":"#dc2626";
+          return (
+            <div key={d.key} style={{ marginBottom:10 }}>
+              <div style={{ display:"flex",justifyContent:"space-between",marginBottom:4 }}>
+                <span style={{ fontSize:"0.82rem",color:"#475569",fontWeight:500 }}>{d.label}</span>
+                <span style={{ fontFamily:"'Outfit',sans-serif",fontWeight:700,fontSize:"0.82rem",color:bc }}>{v}<span style={{ color:"#94a3b8",fontWeight:400 }}>/{d.max}</span></span>
+              </div>
+              <div className="prog-track"><div className="prog-fill" style={{ width:`${pct}%`,background:bc }} /></div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Improvement tips toggle */}
+      <button onClick={()=>setShowTips(!showTips)} style={{ width:"100%",padding:"12px 16px",background:"white",border:"1.5px solid #e2e8f0",borderRadius:10,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer",marginBottom:14,fontFamily:"'IBM Plex Sans',sans-serif",fontSize:"0.85rem",color:"#475569" }}>
+        <span>💡 항목별 개선 방법 보기</span>
+        <span style={{ color:"#94a3b8" }}>{showTips?"▲":"▼"}</span>
+      </button>
+      {showTips && (
+        <div style={{ marginBottom:14, display:"flex",flexDirection:"column",gap:10 }}>
+          {bdDef.map(d=>{
+            const tip=getTip(d.key,bd[d.key],d.max);
+            return (
+              <div key={d.key}>
+                <div style={{ fontSize:"0.73rem",fontWeight:600,color:"#475569",marginBottom:4,textTransform:"uppercase",letterSpacing:"0.04em" }}>{d.label}</div>
+                <div className={tip.cls}>{tip.text}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Risk radar */}
+      <div style={{ marginBottom:14 }}>
+        <div style={{ fontFamily:"'Outfit',sans-serif",fontWeight:700,color:"#0f2744",fontSize:"0.95rem",marginBottom:10 }}>🎯 리스크 레이더</div>
+        <div className="grid-2" style={{ display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:9 }}>
+          {risks.map(r=>{
+            const rc=RL_C[r.rl];
+            return (
+              <div key={r.title} className="risk-card" style={{ background:rc.bg,border:`1px solid ${rc.b}` }}>
+                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6 }}>
+                  <span style={{ fontFamily:"'Outfit',sans-serif",fontWeight:600,fontSize:"0.82rem",color:"#1e293b" }}>{r.title}</span>
+                  <span style={{ background:"white",color:rc.c,border:`1px solid ${rc.b}`,fontSize:"0.68rem",fontWeight:700,padding:"2px 9px",borderRadius:99 }}>{RL_L[r.rl]}</span>
+                </div>
+                <p style={{ fontSize:"0.77rem",color:"#475569",lineHeight:1.6 }}>{r.ds[r.rl]}</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Government support toggle */}
+      <button onClick={()=>setShowSupport(!showSupport)} style={{ width:"100%",padding:"12px 16px",background:showSupport?"#eff6ff":"white",border:`1.5px solid ${showSupport?"#1d4ed8":"#e2e8f0"}`,borderRadius:10,display:"flex",justifyContent:"space-between",alignItems:"center",cursor:"pointer",marginBottom:14,fontFamily:"'IBM Plex Sans',sans-serif",fontSize:"0.85rem",color:showSupport?"#1d4ed8":"#475569",fontWeight:showSupport?600:400 }}>
+        <span>🏛️ 활용 가능한 정부·기관 지원제도 확인 ({supports.length}건)</span>
+        <span style={{ color:showSupport?"#1d4ed8":"#94a3b8" }}>{showSupport?"▲":"▼"}</span>
+      </button>
+      {showSupport && (
+        <div style={{ marginBottom:14,display:"flex",flexDirection:"column",gap:10 }}>
+          {supports.map(s=>(
+            <div key={s.id} className="sup-card">
+              <div style={{ display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:8,gap:10 }}>
+                <div style={{ display:"flex",alignItems:"center",gap:8 }}>
+                  <div style={{ width:32,height:32,background:s.bg,border:`1px solid ${s.color}33`,borderRadius:8,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,flexShrink:0 }}>{s.icon}</div>
+                  <div>
+                    <div style={{ fontFamily:"'Outfit',sans-serif",fontWeight:700,fontSize:"0.88rem",color:"#1e293b" }}>{s.title}</div>
+                    <div style={{ fontSize:"0.69rem",color:s.color,fontWeight:600,marginTop:1 }}>{s.tag}</div>
+                  </div>
+                </div>
+              </div>
+              <p style={{ fontSize:"0.8rem",color:"#475569",lineHeight:1.7,marginBottom:10 }}>{s.desc}</p>
+              <div style={{ display:"flex",flexDirection:"column",gap:4,marginBottom:10 }}>
+                {s.cond.map((c,i)=>(
+                  <div key={i} style={{ display:"flex",gap:6,alignItems:"flex-start" }}>
+                    <span style={{ color:s.color,fontSize:12,flexShrink:0,marginTop:1 }}>·</span>
+                    <span style={{ fontSize:"0.75rem",color:"#64748b",lineHeight:1.55 }}>{c}</span>
+                  </div>
+                ))}
+              </div>
+              <a href={s.link} target="_blank" rel="noopener noreferrer" style={{ display:"inline-block",background:s.bg,color:s.color,border:`1px solid ${s.color}44`,padding:"5px 13px",borderRadius:7,fontSize:"0.75rem",fontWeight:600,textDecoration:"none" }}>
+                바로가기 →
+              </a>
+            </div>
+          ))}
+          <div style={{ padding:"10px 13px",background:"#f8fafc",border:"1px dashed #cbd5e1",borderRadius:8,fontSize:"0.72rem",color:"#94a3b8",lineHeight:1.65 }}>
+            💡 위 지원제도는 입력된 기업·후보자 조건 기반으로 자동 매칭된 결과입니다. 세부 자격요건은 각 기관에서 직접 확인하세요.
+          </div>
+        </div>
+      )}
+
+      {/* Checklist */}
+      <div className="card" style={{ padding:"18px",marginBottom:14 }}>
+        <div style={{ fontFamily:"'Outfit',sans-serif",fontWeight:700,color:"#0f2744",fontSize:"0.95rem",marginBottom:12 }}>✅ 준비사항 체크리스트</div>
+        <div className="grid-2" style={{ display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:5 }}>
+          {["현재 체류자격 및 기간 확인","전공·직무 연관성 검토","경력·학위 증명서 확인","고용계약서 준비 (임금요건 포함)","직무기술서 작성 (E-7 코드 기준)","고용추천서 필요 여부 확인","체류자격 변경 가능 여부 확인","출입국관서 사전 문의","온보딩 담당자 지정","업무 소통 방식 결정","NDA 및 영업비밀 보호계약","핵심기술 접근권한 설정","퇴직 시 자료반납 절차 마련","비자 갱신 일정 사전 계획"].map((item,i)=>(
+            <div key={i} style={{ display:"flex",alignItems:"flex-start",gap:7,padding:"7px 9px",borderRadius:6,background:"#f8fafc" }}>
+              <span style={{ color:"#1d4ed8",flexShrink:0,fontSize:12,marginTop:1 }}>☐</span>
+              <span style={{ fontSize:"0.78rem",color:"#475569",lineHeight:1.55 }}>{item}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Dark report */}
+      <div style={{ background:"#0c2040",borderRadius:14,padding:"20px",marginBottom:14,border:"1px solid #1a3a5c" }}>
+        <div style={{ fontFamily:"'Outfit',sans-serif",fontWeight:700,color:"white",fontSize:"1rem",marginBottom:14 }}>📄 종합 리포트</div>
+        <div className="grid-2" style={{ display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10 }}>
+          {[{ic:"📈",title:"강점 요인",items:strengths,acc:"#34d399"},{ic:"⚠",title:"주의 요인",items:warnings,acc:"#fbbf24"}].map(({ic,title,items,acc})=>(
+            <div key={title} style={{ background:"rgba(255,255,255,.06)",borderRadius:9,padding:14 }}>
+              <div className="sec-lbl" style={{ color:"#64748b",marginBottom:9 }}>{ic} {title}</div>
+              {items.map((s,i)=>(
+                <div key={i} style={{ display:"flex",gap:5,marginBottom:5,alignItems:"flex-start" }}>
+                  <span style={{ color:acc,fontSize:11,flexShrink:0,marginTop:2 }}>›</span>
+                  <span style={{ fontSize:"0.77rem",color:"#cbd5e1",lineHeight:1.55 }}>{s}</span>
+                </div>
+              ))}
+            </div>
+          ))}
+          <div style={{ background:"rgba(255,255,255,.06)",borderRadius:9,padding:14 }}>
+            <div className="sec-lbl" style={{ color:"#64748b",marginBottom:9 }}>🔐 기술보호 권고</div>
+            <p style={{ fontSize:"0.77rem",color:"#94a3b8",lineHeight:1.7 }}>
+              {secN>=4?"체계가 잘 갖춰져 있습니다. 정기 보안 점검과 서약 갱신을 유지하세요.":secN>=2?"NDA 체결·접근권한 분리·자료 반출 통제를 우선 조치하세요.":"기술보호 체계 전반 구축이 시급합니다. NDA, 접근권한, 반출 통제를 즉시 마련하세요."}
+            </p>
+          </div>
+          <div style={{ background:"rgba(255,255,255,.06)",borderRadius:9,padding:14 }}>
+            <div className="sec-lbl" style={{ color:"#64748b",marginBottom:9 }}>🏢 온보딩 권고</div>
+            <p style={{ fontSize:"0.77rem",color:"#94a3b8",lineHeight:1.7 }}>
+              {["kr","not_ready"].includes(company.language)?"언어 장벽 대비 업무 언어 정책 수립 및 온보딩 담당자 지정이 필요합니다.":"온보딩 담당자를 지정하고 입사 초기 3개월간 정기 체크인을 운영하세요."}
+            </p>
+          </div>
+        </div>
+        <div style={{ marginTop:12,background:"rgba(251,191,36,.09)",border:"1px solid rgba(251,191,36,.18)",borderRadius:8,padding:"10px 13px",fontSize:"0.75rem",color:"#fcd34d",lineHeight:1.7 }}>
+          ⚠ 실제 채용 전 <strong>출입국·외국인관서, 법무사, 노무사</strong>를 통한 비자 적합성 확인이 필요합니다.
+        </div>
+      </div>
+
+      <button className="btn-s" onClick={onBack} style={{ padding:"0 18px",fontSize:"0.85rem",width:"100%" }}>← 처음부터 다시</button>
+    </div>
+  );
+}
+
+/* ─ App ─────────────────────────────────────────────────────────────────── */
+function HirePass() {
+  const [step,setStep]=useState(0);
+  const [co,setCo]=useState(null);
+  const [ca,setCa]=useState(null);
+  const topRef=useRef(null);
+  const scrollTop=()=>setTimeout(()=>topRef.current?.scrollIntoView({behavior:"smooth"}),60);
+
+  return (
+    <>
+      <style>{css}</style>
+      <div ref={topRef} style={{ minHeight:"100vh",background:"#f8fafc",fontFamily:"'IBM Plex Sans',sans-serif" }}>
+
+        {/* Navbar */}
+        <nav style={{ background:"#0f2744",height:50,display:"flex",alignItems:"center",justifyContent:"space-between",padding:"0 16px",position:"sticky",top:0,zIndex:100,borderBottom:"1px solid #1a3a5c" }}>
+          <div style={{ display:"flex",alignItems:"center",gap:9 }}>
+            <div style={{ width:27,height:27,background:"#1d4ed8",borderRadius:6,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
+              <span style={{ color:"white",fontFamily:"'Outfit',sans-serif",fontWeight:800,fontSize:13 }}>H</span>
+            </div>
+            <span style={{ fontFamily:"'Outfit',sans-serif",fontWeight:700,color:"white",fontSize:"1rem" }}>HirePass</span>
+            <span style={{ background:"rgba(96,165,250,.15)",color:"#93c5fd",fontSize:"0.63rem",padding:"2px 8px",borderRadius:99,fontWeight:500 }}>프로토타입</span>
+          </div>
+          {step>0 && <button onClick={()=>{setStep(0);setCo(null);setCa(null);scrollTop();}} style={{ background:"rgba(255,255,255,.07)",color:"#94a3b8",border:"1px solid rgba(255,255,255,.1)",padding:"5px 11px",borderRadius:6,fontSize:"0.73rem",cursor:"pointer" }}>처음으로</button>}
+        </nav>
+
+        {/* Hero */}
+        {step===0&&(
+          <div style={{ background:"linear-gradient(140deg,#0a1f3d 0%,#142e52 45%,#1a3a8f 100%)",padding:"44px 16px 32px",position:"relative",overflow:"hidden" }}>
+            <div style={{ position:"absolute",inset:0,backgroundImage:"radial-gradient(circle at 75% 25%,rgba(59,130,246,.12) 0%,transparent 50%)" }}/>
+            <div style={{ maxWidth:680,margin:"0 auto",textAlign:"center",position:"relative" }}>
+              <div style={{ display:"inline-flex",alignItems:"center",gap:5,background:"rgba(59,130,246,.13)",border:"1px solid rgba(96,165,250,.27)",borderRadius:99,padding:"3px 12px",marginBottom:14 }}>
+                <span style={{ color:"#93c5fd",fontSize:"0.72rem",fontWeight:500 }}>🔍 기술혁신형 중소기업 전용 사전진단 도구</span>
+              </div>
+              <h1 className="hero-title" style={{ fontFamily:"'Outfit',sans-serif",fontSize:"2.4rem",fontWeight:800,color:"white",lineHeight:1.2,marginBottom:12,letterSpacing:"-0.02em" }}>
+                외국인 전문인력 채용 전,<br/>
+                <span style={{ color:"#60a5fa" }}>비자·직무·보안 리스크</span>를<br/>한 번에 점검합니다.
+              </h1>
+              <p style={{ color:"#94a3b8",fontSize:"0.88rem",lineHeight:1.75,maxWidth:460,margin:"0 auto 20px" }}>
+                기술혁신형 중소기업을 위한 외국인 전문인력 채용 사전진단 도구
+              </p>
+              <div style={{ display:"flex",gap:22,justifyContent:"center",flexWrap:"wrap" }}>
+                {[["3단계","간편 플로우"],["7곳","샘플 기업 DB"],["4건+","정부지원 매칭"],["100점","종합 점수"]].map(([n,d])=>(
+                  <div key={d} style={{ textAlign:"center" }}>
+                    <div style={{ fontFamily:"'Outfit',sans-serif",fontSize:"1.2rem",fontWeight:800,color:"white" }}>{n}</div>
+                    <div style={{ fontSize:"0.67rem",color:"#64748b",marginTop:1 }}>{d}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Disclaimer */}
+        <div style={{ maxWidth:820,margin:"0 auto",padding:"14px 16px 0" }}>
+          <div style={{ background:"#fef3c7",border:"1px solid #fde68a",borderLeft:"4px solid #d97706",borderRadius:8,padding:"10px 13px",fontSize:"0.76rem",color:"#92400e",lineHeight:1.65 }}>
+            ⚠ 본 진단은 행정 보조 도구이며 비자 발급 가능성을 보장하지 않습니다. 실제 채용 전 <strong>출입국·외국인관서, 법무사, 노무사</strong> 등 전문가 확인이 필요합니다.
+          </div>
+        </div>
+
+        {/* Main */}
+        <div style={{ maxWidth:820,margin:"0 auto",padding:"22px 16px 52px" }}>
+          <div style={{ marginBottom:26 }}><StepBar cur={step}/></div>
+          {step===0&&<Step1 onNext={c=>{setCo(c);setStep(1);scrollTop();}}/>}
+          {step===1&&<Step2 company={co} onNext={c=>{setCa(c);setStep(2);scrollTop();}} onBack={()=>{setStep(0);scrollTop();}}/>}
+          {step===2&&<Step3 company={co} candidate={ca} onBack={()=>{setStep(0);setCo(null);setCa(null);scrollTop();}}/>}
+        </div>
+
+        {/* Significance */}
+        <div style={{ background:"white",borderTop:"1px solid #e2e8f0",padding:"40px 16px" }}>
+          <div style={{ maxWidth:620,margin:"0 auto",textAlign:"center" }}>
+            <div style={{ display:"inline-flex",alignItems:"center",gap:5,background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:99,padding:"3px 12px",marginBottom:11 }}>
+              <span style={{ color:"#1d4ed8",fontSize:"0.72rem",fontWeight:600 }}>이 도구의 의의</span>
+            </div>
+            <h2 style={{ fontFamily:"'Outfit',sans-serif",fontSize:"1.15rem",fontWeight:700,color:"#0f2744",marginBottom:10 }}>HirePass가 제안하는 것</h2>
+            <p style={{ color:"#475569",fontSize:"0.84rem",lineHeight:1.9 }}>
+              HirePass는 외국인 전문인력 채용 과정에서 기술혁신형 중소기업이 겪는 <strong>정보 부족, 비자 행정 부담, 직무 적합성 판단 어려움, 기술보호 우려</strong>를 줄이기 위한 사전진단형 프로토타입입니다. 외국인 채용을 무조건 확대하는 것이 아니라, <strong>합법적이고 안전한 채용 가능성을 높이는 행정지원 인프라</strong>의 예시로 제안됩니다.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ background:"#0c2040",padding:"15px 16px",textAlign:"center" }}>
+          <p style={{ color:"#334155",fontSize:"0.7rem" }}>HirePass · 기술혁신형 중소기업 외국인 전문인력 채용 사전진단 도구 · 대학 프로젝트 프로토타입</p>
+        </div>
+      </div>
+    </>
+  );
+}
+
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<HirePass />);
+  </script>
+</body>
+</html>
